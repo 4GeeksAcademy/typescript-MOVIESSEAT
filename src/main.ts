@@ -67,6 +67,24 @@ export function reservarAsiento(sala: number[][], fila: number, columna: number)
   }
 }
 
+// Cuenta los asientos ocupados y disponibles sin modificar la sala.
+export function contarAsientos(sala: number[][]): [number, number] {
+  let cantidadOcupados: number = 0;
+  let cantidadDisponibles: number = 0;
+
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      if (sala[indiceFila][indiceColumna] === ASIENTO_OCUPADO) {
+        cantidadOcupados++;
+      } else if (sala[indiceFila][indiceColumna] === ASIENTO_DISPONIBLE) {
+        cantidadDisponibles++;
+      }
+    }
+  }
+
+  return [cantidadOcupados, cantidadDisponibles];
+}
+
 const salaInicial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
 
 console.log("¡Bienvenido a Cinema Seat Manager!");
@@ -102,3 +120,49 @@ if (intentosFallidosSinCambios) {
 } else {
   console.log("Verificación incorrecta: se detectó un cambio inesperado en la sala.");
 }
+
+console.log("\nPRUEBAS DE CONTEO DE ASIENTOS");
+const salaConteo: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+const capacidadTotal: number = CANTIDAD_FILAS * CANTIDAD_COLUMNAS;
+
+const [ocupadosIniciales, disponiblesIniciales]: [number, number] = contarAsientos(salaConteo);
+console.log(`Escenario A — Sala vacía: ocupados ${ocupadosIniciales}, disponibles ${disponiblesIniciales}.`);
+
+console.log(reservarAsiento(salaConteo, 3, 5));
+const [ocupadosTrasUnaReserva, disponiblesTrasUnaReserva]: [number, number] = contarAsientos(salaConteo);
+console.log(`Escenario B — Una reserva: ocupados ${ocupadosTrasUnaReserva}, disponibles ${disponiblesTrasUnaReserva}.`);
+
+console.log(reservarAsiento(salaConteo, 2, 2));
+console.log(reservarAsiento(salaConteo, 8, 10));
+const [ocupadosTrasVariasReservas, disponiblesTrasVariasReservas]: [number, number] = contarAsientos(salaConteo);
+console.log(`Escenario C — Varias reservas: ocupados ${ocupadosTrasVariasReservas}, disponibles ${disponiblesTrasVariasReservas}.`);
+
+console.log(reservarAsiento(salaConteo, 3, 5));
+const [ocupadosTrasDuplicada, disponiblesTrasDuplicada]: [number, number] = contarAsientos(salaConteo);
+console.log(`Escenario D — Reserva duplicada: ocupados ${ocupadosTrasDuplicada}, disponibles ${disponiblesTrasDuplicada}.`);
+
+const salaAntesDelConteo: number[][] = [];
+for (let indiceFila: number = 0; indiceFila < salaConteo.length; indiceFila++) {
+  const filaCopiada: number[] = [];
+  for (let indiceColumna: number = 0; indiceColumna < salaConteo[indiceFila].length; indiceColumna++) {
+    filaCopiada.push(salaConteo[indiceFila][indiceColumna]);
+  }
+  salaAntesDelConteo.push(filaCopiada);
+}
+
+const [ocupadosFinales, disponiblesFinales]: [number, number] = contarAsientos(salaConteo);
+let conteoSinModificarSala: boolean = true;
+for (let indiceFila: number = 0; indiceFila < salaConteo.length; indiceFila++) {
+  for (let indiceColumna: number = 0; indiceColumna < salaConteo[indiceFila].length; indiceColumna++) {
+    if (salaConteo[indiceFila][indiceColumna] !== salaAntesDelConteo[indiceFila][indiceColumna]) {
+      conteoSinModificarSala = false;
+    }
+  }
+}
+
+console.log("Escenario E — Comprobación de integridad:");
+console.log(`Capacidad total: ${capacidadTotal} asientos`);
+console.log(`Asientos ocupados: ${ocupadosFinales}`);
+console.log(`Asientos disponibles: ${disponiblesFinales}`);
+console.log(`La suma coincide con la capacidad: ${ocupadosFinales + disponiblesFinales === capacidadTotal ? "sí" : "no"}.`);
+console.log(`contarAsientos no modificó la matriz: ${conteoSinModificarSala ? "sí" : "no"}.`);
