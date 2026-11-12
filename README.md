@@ -1,135 +1,123 @@
-# Cinema Seat Manager 🎬
+# Cinema Seat Manager
 
-Cinema Seat Manager es un programa de consola para consultar y gestionar reservas de asientos de un cine independiente. Está desarrollado en TypeScript como proyecto académico del programa **AI Engineering de 4Geeks Academy**.
+Cinema Seat Manager modela la gestión de asientos de un cine independiente. El ejercicio obligatorio representa una sala de **8 filas y 10 columnas (80 asientos)** y permite consultar su ocupación, reservar asientos y localizar parejas contiguas. La solución principal es una demostración de consola en TypeScript; la interfaz web es una ampliación opcional.
 
-## Descripción del problema
+## Tecnologías
 
-El programa representa una sala de **8 filas y 10 asientos por fila**. Permite mostrar la disponibilidad, reservar asientos individuales sin aceptar reservas duplicadas, consultar los conteos y buscar el primer par de asientos libres consecutivos horizontalmente dentro de una misma fila.
+- **TypeScript** para la lógica y los tipos.
+- **Node.js** y **npm** para ejecutar los scripts.
+- **HTML5** para la estructura de la interfaz web.
+- **Tailwind CSS v4**, cargado desde CDN en `index.html`. No requiere una instalación independiente para visualizar la interfaz; sí se necesita conexión a internet para descargar sus estilos.
+- **Vite** para servir y compilar la interfaz web.
 
-## Tecnologías utilizadas
+## Ejercicio obligatorio: lógica de consola
 
-- TypeScript
-- Node.js
-- npm
-- Git y GitHub para el control de versiones y alojamiento del proyecto
+Las funciones principales están en `src/main.ts` y trabajan con una matriz `number[][]`. Las filas y columnas que reciben o muestran a las personas usuarias se numeran desde 1.
 
-## Funcionalidades principales
-
-Las cinco funciones públicas implementadas se encuentran en `src/main.ts`:
-
-| Función | Parámetros | Resultado y comportamiento |
+| Función | Parámetros | Retorno y responsabilidad |
 | --- | --- | --- |
-| `inicializarSala(cantidadFilas, cantidadColumnas)` | Cantidad de filas y columnas (`number`). | Devuelve una matriz `number[][]` nueva, inicializada con asientos disponibles (`0`). |
-| `mostrarSala(sala)` | Matriz de asientos (`number[][]`). | Imprime filas y columnas numeradas y representa los valores como `L` o `X`. No modifica la matriz. |
-| `reservarAsiento(sala, fila, columna)` | Matriz y coordenadas visibles (`number`). | Devuelve un mensaje (`string`). Cambia el asiento de `0` a `1` si las coordenadas son enteros finitos válidos y el asiento está disponible; rechaza ubicaciones inválidas u ocupadas. |
-| `contarAsientos(sala)` | Matriz de asientos (`number[][]`). | Devuelve la tupla `[ocupados, disponibles]` y no modifica la matriz. |
-| `buscarAsientosContiguos(sala)` | Matriz de asientos (`number[][]`). | Devuelve el primer par horizontal como `[[fila, columna], [fila, columna]]` con coordenadas visibles desde 1; si no hay pareja, devuelve `null`. No modifica ni reserva los asientos. |
+| `inicializarSala(cantidadFilas, cantidadColumnas)` | Cantidad de filas y columnas (`number`). | Crea y devuelve una matriz nueva `number[][]` con todos los asientos disponibles (`0`). |
+| `mostrarSala(sala)` | Matriz de asientos (`number[][]`). | Imprime encabezados de columnas y filas numeradas; representa disponibilidad con `L` y ocupación con `X`. No modifica la matriz. |
+| `reservarAsiento(sala, fila, columna)` | Matriz y coordenadas visibles (`number`). | Devuelve un mensaje (`string`). Marca el asiento como ocupado (`1`) si las coordenadas son enteros finitos, están dentro de rango y el asiento está libre. Rechaza coordenadas inválidas y reservas duplicadas. |
+| `contarAsientos(sala)` | Matriz de asientos (`number[][]`). | Devuelve `[ocupados, disponibles]` como `[number, number]`, sin modificar la matriz. |
+| `buscarAsientosContiguos(sala)` | Matriz de asientos (`number[][]`). | Devuelve el primer par libre horizontal de una misma fila, como `[[fila, columna], [fila, columna]]`, con coordenadas desde 1; si no hay pareja devuelve `null`. No reserva ni modifica los asientos. |
 
-## Representación de los asientos
+### Representación de los asientos
 
-La estructura principal es una matriz bidimensional `number[][]`: cada arreglo interno corresponde a una fila.
+La sala se conserva como matriz bidimensional de números; cada arreglo interno representa una fila:
 
-- `0`: asiento disponible.
-- `1`: asiento ocupado.
-- `L`: representación en consola de un asiento disponible (*libre*).
-- `X`: representación en consola de un asiento ocupado.
+- `0` = disponible.
+- `1` = ocupado.
+- `L` = disponible al mostrar el mapa por consola.
+- `X` = ocupado al mostrar el mapa por consola.
+- `★` = pareja recomendada en la interfaz web. Es solo un indicador visual: los asientos recomendados siguen disponibles y la matriz de ocupación no cambia hasta que se reserva uno.
 
-Las filas y columnas se muestran al usuario empezando desde **1**. Los índices internos de los arreglos empiezan desde **0**, por lo que las coordenadas visibles se convierten a índices restando uno.
+### Ejecutar y evaluar el ejercicio
 
-## Instalación y ejecución
+Desde el directorio del proyecto, instala las dependencias y ejecuta la demostración obligatoria:
 
-1. Clona el repositorio y entra a su directorio:
-
-   ```bash
-   git clone https://github.com/4GeeksAcademy/typescript-MOVIESSEAT
-   cd typescript-MOVIESSEAT
-   ```
-
-2. Abre el proyecto en una terminal local o en GitHub Codespaces.
-3. Instala las dependencias definidas por el proyecto:
-
-   ```bash
-   npm install
-   ```
-
-4. Ejecuta la demostración de consola:
-
-   ```bash
-   npm run console
-   ```
-
-5. Comprueba los tipos de TypeScript:
-
-   ```bash
-   npm run typecheck
-   ```
-
-Ambos comandos están definidos en `package.json`. El script `console` ejecuta `tsx src/main.ts`; `typecheck` ejecuta `tsc --noEmit`.
-
-## Ejemplo de salida
-
-El formato utilizado por `mostrarSala()` incluye los encabezados numéricos de columna y el número visible de cada fila:
-
-```text
-      1   2   3   4   5   6   7   8   9  10
- 1 |  X   X   L   L   L   L   L   L   L   L
- 2 |  L   L   L   L   L   L   L   L   L   L
- 3 |  L   L   L   L   X   L   L   L   L   L
+```bash
+npm install
+npm run console
 ```
 
-## Escenarios de demostración
+`npm run console` ejecuta `tsx src/main.ts`. Presenta los cuatro escenarios principales y validaciones de límites; no requiere abrir la página web.
 
-Al ejecutar `npm run console`, el programa crea una matriz independiente para cada escenario y obtiene los conteos y las parejas mediante las funciones implementadas:
+### Escenarios incluidos y resultados comprobados
 
-1. **Sala vacía:** 0 ocupados y 80 disponibles. La primera pareja libre está en la fila 1, asientos 1 y 2.
-2. **Sala parcialmente ocupada:** 3 ocupados y 77 disponibles. La primera pareja libre está en la fila 1, asientos 3 y 4. Al intentar repetir una reserva, se rechaza y el conteo no cambia.
-3. **Sala casi llena:** 76 ocupados y 4 disponibles aislados. No se encuentra una pareja horizontal.
-4. **Sala completamente llena:** 80 ocupados y 0 disponibles. No se encuentra una pareja y una reserva de un asiento ocupado se rechaza.
+1. **Sala vacía:** 0 ocupados, 80 disponibles; la primera pareja está en fila 1, asientos 1 y 2.
+2. **Sala parcialmente ocupada:** 3 ocupados, 77 disponibles; la primera pareja está en fila 1, asientos 3 y 4. La reserva duplicada se rechaza y los conteos permanecen iguales.
+3. **Sala casi llena con asientos libres aislados:** 76 ocupados, 4 disponibles; no se encuentra una pareja horizontal.
+4. **Sala completamente ocupada:** 80 ocupados, 0 disponibles; no se encuentra pareja y se rechaza reservar un asiento ocupado.
 
-La demostración incluye también validaciones de fila y columna fuera de rango, coordenadas decimales, reservas duplicadas, una pareja libre al final de la sala, asientos aislados y asientos libres separados entre filas.
+La demostración también verifica fila y columna fuera de rango, coordenadas decimales, duplicados, una pareja libre al final de la sala, asientos aislados, asientos disponibles separados entre filas y las dimensiones de 8 × 10.
 
-## Restricciones del proyecto
+## Interfaz web opcional
 
-El ejercicio utiliza arreglos bidimensionales, funciones con tipos explícitos, parámetros y valores de retorno, ciclos `for`, condicionales y tuplas para devolver varios resultados. No se utilizan objetos ni clases para representar asientos.
+La ampliación web presenta los 80 asientos y permite reservar con clic, consultar ocupados y disponibles, recibir el rechazo de reservas duplicadas y buscar dos asientos contiguos. La primera pareja libre encontrada se marca visualmente con `★` y se identifica también en su etiqueta accesible. Los estados `L` y `X`, el foco visible y los controles de botón permiten comprender y navegar la interfaz sin depender solo del color.
 
-## Limitaciones
+La interfaz reutiliza las cinco funciones de `src/main.ts`; no implementa una lógica paralela de reserva o búsqueda. El mapa puede desplazarse horizontalmente dentro de su propio contenedor en pantallas pequeñas.
 
-- Es una demostración programada de consola, no un sistema comercial de venta de entradas.
-- No incluye base de datos ni persistencia: las reservas no se conservan entre ejecuciones.
-- No implementa un proceso de compra.
-- No contiene una interfaz web.
-- Los escenarios se ejecutan como pruebas predefinidas; no hay menú interactivo.
+### Ejecutar la interfaz web
 
-## Estructura del repositorio
+Con las dependencias instaladas, inicia el servidor de desarrollo definido por el script `start`:
+
+```bash
+npm run start
+```
+
+Abre en el navegador la URL local que indique Vite en la terminal. El puerto puede variar si el predeterminado está ocupado. El comando `npm run console` sigue siendo suficiente para evaluar el ejercicio obligatorio.
+
+## Verificaciones
+
+Los siguientes scripts están definidos en `package.json`:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+`typecheck` comprueba los tipos sin emitir archivos. `build` ejecuta la compilación de TypeScript y genera la salida de producción de Vite.
+
+## Estructura del proyecto
 
 ```text
 .
-├── README.md
+├── index.html
 ├── package.json
-├── package-lock.json
+├── README.md
 ├── tsconfig.json
 ├── vite.config.ts
-├── index.html
-├── learn.json
-├── README.es.md
 ├── public/
 └── src/
     └── main.ts
 ```
 
-El árbol muestra los archivos relevantes de la plantilla y del programa; también existen archivos auxiliares de configuración y control de versiones.
+- `src/main.ts`: las cinco funciones del ejercicio, sus demostraciones por consola y la integración de la interfaz web.
+- `index.html`: estructura HTML5, contenido de la interfaz y carga de Tailwind CSS v4 desde CDN.
+- `README.md`: documentación del proyecto.
+- `package.json`: dependencias y scripts npm.
+- `tsconfig.json`: configuración de TypeScript.
+- `vite.config.ts`: configuración de Vite y su integración disponible para Tailwind CSS.
 
-## Aprendizajes
+## Limitaciones
 
-- Construcción y recorrido de matrices bidimensionales.
-- Funciones TypeScript con parámetros y retornos tipados.
-- Uso de ciclos `for` y condicionales.
-- Conversión y validación de índices.
-- Tuplas para representar resultados múltiples.
-- Pruebas de escenarios y casos límite por consola.
+- Las reservas de la interfaz web se mantienen solo en memoria mientras la página permanece abierta; al recargar, la sala vuelve a estar vacía.
+- No hay base de datos ni persistencia, autenticación o procesamiento de pagos.
+- La interfaz web es una ampliación opcional; el ejercicio obligatorio se ejecuta por consola.
+- Tailwind CSS se obtiene de un CDN y necesita conexión a internet para cargar los estilos.
+- El programa es un ejercicio académico, no una plataforma comercial de venta de entradas.
 
-## Autor y contexto académico
+## Clonar el repositorio
 
-- **Autor:** Joaquín Rengifo
-- **Institución:** 4Geeks Academy
-- **Programa:** AI Engineering
+```bash
+git clone https://github.com/4GeeksAcademy/typescript-MOVIESSEAT.git
+cd typescript-MOVIESSEAT
+npm install
+```
+
+## Autor
+
+**Joaquín Rengifo**
+
+4Geeks Academy — AI Engineering

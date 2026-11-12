@@ -104,6 +104,7 @@ export function buscarAsientosContiguos(sala: number[][]): [[number, number], [n
   return null;
 }
 
+function ejecutarDemostracionesConsola(): void {
 // Crea una sala de las dimensiones del ejercicio con todos sus asientos ocupados.
 function crearSalaOcupada(): number[][] {
   const sala: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
@@ -211,3 +212,154 @@ for (let indiceFila: number = 0; indiceFila < salaVacia.length; indiceFila++) {
   }
 }
 console.log(`Dimensiones verificadas (8 × 10): ${dimensionesCorrectas ? "sí" : "no"}.`);
+}
+
+function obtenerElementoWeb(id: string): HTMLElement {
+  const elemento: HTMLElement | null = document.getElementById(id);
+
+  if (elemento === null) {
+    throw new Error(`No se encontró el elemento requerido: #${id}`);
+  }
+
+  return elemento;
+}
+
+function actualizarEstadisticasWeb(salaWeb: number[][]): void {
+  const [ocupadosWeb, disponiblesWeb]: [number, number] = contarAsientos(salaWeb);
+  const capacidadWeb: number = ocupadosWeb + disponiblesWeb;
+  obtenerElementoWeb("total-count").textContent = String(capacidadWeb);
+  obtenerElementoWeb("occupied-count").textContent = String(ocupadosWeb);
+  obtenerElementoWeb("available-count").textContent = String(disponiblesWeb);
+}
+
+function actualizarAspectoAsiento(
+  asiento: HTMLButtonElement,
+  estaOcupado: boolean,
+  fila: number,
+  columna: number,
+  recomendado: boolean,
+): void {
+  const estadoAsiento: string = estaOcupado ? "ocupado" : "disponible";
+  asiento.className = recomendado
+    ? "aspect-square rounded-md border border-amber-200 bg-amber-400 font-bold text-slate-950 shadow-[0_0_14px_rgba(251,191,36,0.55)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    : estaOcupado
+    ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 font-bold text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 font-bold text-slate-950 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+  asiento.textContent = recomendado ? "★" : estaOcupado ? "X" : "L";
+  const descripcionRecomendacion: string = recomendado ? ", recomendado para sentarse juntos" : "";
+  asiento.setAttribute("aria-label", `Fila ${fila}, asiento ${columna}: ${estadoAsiento}${descripcionRecomendacion}`);
+  asiento.title = `Fila ${fila}, asiento ${columna}: ${estadoAsiento}${descripcionRecomendacion}`;
+}
+
+function renderizarSalaWeb(): void {
+  const salaWeb: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+  actualizarEstadisticasWeb(salaWeb);
+
+  const mapa: HTMLElement = obtenerElementoWeb("seat-map");
+  const mensajeReserva: HTMLElement = obtenerElementoWeb("booking-message");
+  const botonBuscarPareja: HTMLElement = obtenerElementoWeb("find-pair-button");
+  const asientosWeb: HTMLButtonElement[][] = [];
+  let parejaRecomendada: [[number, number], [number, number]] | null = null;
+
+  function actualizarMapaWeb(): void {
+    for (let filaBoton: number = 0; filaBoton < asientosWeb.length; filaBoton++) {
+      for (let columnaBoton: number = 0; columnaBoton < asientosWeb[filaBoton].length; columnaBoton++) {
+        const esRecomendado: boolean = parejaRecomendada !== null && (
+          (parejaRecomendada[0][0] === filaBoton + 1 && parejaRecomendada[0][1] === columnaBoton + 1) ||
+          (parejaRecomendada[1][0] === filaBoton + 1 && parejaRecomendada[1][1] === columnaBoton + 1)
+        );
+        actualizarAspectoAsiento(
+          asientosWeb[filaBoton][columnaBoton],
+          salaWeb[filaBoton][columnaBoton] === ASIENTO_OCUPADO,
+          filaBoton + 1,
+          columnaBoton + 1,
+          esRecomendado,
+        );
+      }
+    }
+  }
+
+  const fragmento: DocumentFragment = document.createDocumentFragment();
+  const encabezadoColumnas: HTMLDivElement = document.createElement("div");
+  encabezadoColumnas.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
+
+  const espacioEtiqueta: HTMLSpanElement = document.createElement("span");
+  espacioEtiqueta.setAttribute("aria-hidden", "true");
+  encabezadoColumnas.appendChild(espacioEtiqueta);
+
+  const numerosColumnas: HTMLDivElement = document.createElement("div");
+  numerosColumnas.className = "grid grid-cols-10 gap-1.5 text-center text-[0.65rem] font-medium text-slate-500 sm:gap-2 sm:text-xs";
+  for (let indiceColumna: number = 0; indiceColumna < CANTIDAD_COLUMNAS; indiceColumna++) {
+    const numeroColumna: HTMLSpanElement = document.createElement("span");
+    numeroColumna.textContent = String(indiceColumna + 1);
+    numerosColumnas.appendChild(numeroColumna);
+  }
+  encabezadoColumnas.appendChild(numerosColumnas);
+  fragmento.appendChild(encabezadoColumnas);
+
+  for (let indiceFila: number = 0; indiceFila < salaWeb.length; indiceFila++) {
+    const fila: HTMLDivElement = document.createElement("div");
+    fila.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
+    fila.setAttribute("role", "group");
+    fila.setAttribute("aria-label", `Fila ${indiceFila + 1}`);
+
+    const etiquetaFila: HTMLSpanElement = document.createElement("span");
+    etiquetaFila.className = "text-right text-xs font-semibold text-slate-400 sm:text-sm";
+    etiquetaFila.textContent = String(indiceFila + 1).padStart(2, "0");
+    fila.appendChild(etiquetaFila);
+
+    const asientosFila: HTMLDivElement = document.createElement("div");
+    asientosFila.className = "grid grid-cols-10 gap-1.5 sm:gap-2";
+    asientosFila.setAttribute("role", "group");
+    asientosFila.setAttribute("aria-label", `Asientos de la fila ${indiceFila + 1}`);
+    const botonesFila: HTMLButtonElement[] = [];
+
+    for (let indiceColumna: number = 0; indiceColumna < salaWeb[indiceFila].length; indiceColumna++) {
+      const asiento: HTMLButtonElement = document.createElement("button");
+      const estaOcupado: boolean = salaWeb[indiceFila][indiceColumna] === ASIENTO_OCUPADO;
+      const filaVisible: number = indiceFila + 1;
+      const columnaVisible: number = indiceColumna + 1;
+
+      asiento.type = "button";
+      asiento.className = "aspect-square rounded-md border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+      actualizarAspectoAsiento(asiento, estaOcupado, filaVisible, columnaVisible, false);
+      asiento.addEventListener("click", () => {
+        const estadoAnterior: number = salaWeb[indiceFila][indiceColumna];
+        const resultado: string = reservarAsiento(salaWeb, filaVisible, columnaVisible);
+        mensajeReserva.textContent = resultado;
+
+        if (salaWeb[indiceFila][indiceColumna] !== estadoAnterior) {
+          parejaRecomendada = null;
+        }
+
+        actualizarMapaWeb();
+        actualizarEstadisticasWeb(salaWeb);
+      });
+      asientosFila.appendChild(asiento);
+      botonesFila.push(asiento);
+    }
+
+    asientosWeb.push(botonesFila);
+    fila.appendChild(asientosFila);
+    fragmento.appendChild(fila);
+  }
+
+  mapa.appendChild(fragmento);
+
+  botonBuscarPareja.addEventListener("click", () => {
+    parejaRecomendada = buscarAsientosContiguos(salaWeb);
+    actualizarMapaWeb();
+
+    if (parejaRecomendada === null) {
+      mensajeReserva.textContent = "No se encontraron dos asientos contiguos disponibles.";
+    } else {
+      mensajeReserva.textContent = `Se encontraron dos asientos juntos: fila ${parejaRecomendada[0][0]}, asientos ${parejaRecomendada[0][1]} y ${parejaRecomendada[1][1]}.`;
+    }
+  });
+}
+
+if (typeof document !== "undefined") {
+  renderizarSalaWeb();
+} else {
+  ejecutarDemostracionesConsola();
+}
