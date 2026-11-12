@@ -104,6 +104,7 @@ export function buscarAsientosContiguos(sala: number[][]): [[number, number], [n
   return null;
 }
 
+function ejecutarDemostracionesConsola(): void {
 // Crea una sala de las dimensiones del ejercicio con todos sus asientos ocupados.
 function crearSalaOcupada(): number[][] {
   const sala: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
@@ -211,3 +212,85 @@ for (let indiceFila: number = 0; indiceFila < salaVacia.length; indiceFila++) {
   }
 }
 console.log(`Dimensiones verificadas (8 × 10): ${dimensionesCorrectas ? "sí" : "no"}.`);
+}
+
+function obtenerElementoWeb(id: string): HTMLElement {
+  const elemento: HTMLElement | null = document.getElementById(id);
+
+  if (elemento === null) {
+    throw new Error(`No se encontró el elemento requerido: #${id}`);
+  }
+
+  return elemento;
+}
+
+function renderizarSalaWeb(): void {
+  const salaWeb: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+  const [ocupadosWeb, disponiblesWeb]: [number, number] = contarAsientos(salaWeb);
+  const capacidadWeb: number = salaWeb.length * salaWeb[0].length;
+
+  obtenerElementoWeb("total-count").textContent = String(capacidadWeb);
+  obtenerElementoWeb("occupied-count").textContent = String(ocupadosWeb);
+  obtenerElementoWeb("available-count").textContent = String(disponiblesWeb);
+
+  const mapa: HTMLElement = obtenerElementoWeb("seat-map");
+  const fragmento: DocumentFragment = document.createDocumentFragment();
+  const encabezadoColumnas: HTMLDivElement = document.createElement("div");
+  encabezadoColumnas.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
+
+  const espacioEtiqueta: HTMLSpanElement = document.createElement("span");
+  espacioEtiqueta.setAttribute("aria-hidden", "true");
+  encabezadoColumnas.appendChild(espacioEtiqueta);
+
+  const numerosColumnas: HTMLDivElement = document.createElement("div");
+  numerosColumnas.className = "grid grid-cols-10 gap-1.5 text-center text-[0.65rem] font-medium text-slate-500 sm:gap-2 sm:text-xs";
+  for (let indiceColumna: number = 0; indiceColumna < CANTIDAD_COLUMNAS; indiceColumna++) {
+    const numeroColumna: HTMLSpanElement = document.createElement("span");
+    numeroColumna.textContent = String(indiceColumna + 1);
+    numerosColumnas.appendChild(numeroColumna);
+  }
+  encabezadoColumnas.appendChild(numerosColumnas);
+  fragmento.appendChild(encabezadoColumnas);
+
+  for (let indiceFila: number = 0; indiceFila < salaWeb.length; indiceFila++) {
+    const fila: HTMLDivElement = document.createElement("div");
+    fila.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
+    fila.setAttribute("role", "group");
+    fila.setAttribute("aria-label", `Fila ${indiceFila + 1}`);
+
+    const etiquetaFila: HTMLSpanElement = document.createElement("span");
+    etiquetaFila.className = "text-right text-xs font-semibold text-slate-400 sm:text-sm";
+    etiquetaFila.textContent = String(indiceFila + 1).padStart(2, "0");
+    fila.appendChild(etiquetaFila);
+
+    const asientosFila: HTMLDivElement = document.createElement("div");
+    asientosFila.className = "grid grid-cols-10 gap-1.5 sm:gap-2";
+    asientosFila.setAttribute("role", "list");
+    asientosFila.setAttribute("aria-label", `Asientos de la fila ${indiceFila + 1}`);
+
+    for (let indiceColumna: number = 0; indiceColumna < salaWeb[indiceFila].length; indiceColumna++) {
+      const asiento: HTMLSpanElement = document.createElement("span");
+      const estaOcupado: boolean = salaWeb[indiceFila][indiceColumna] === ASIENTO_OCUPADO;
+      const estadoAsiento: string = estaOcupado ? "ocupado" : "disponible";
+
+      asiento.className = estaOcupado
+        ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 shadow-sm"
+        : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 shadow-sm";
+      asiento.setAttribute("role", "listitem");
+      asiento.setAttribute("aria-label", `Fila ${indiceFila + 1}, asiento ${indiceColumna + 1}: ${estadoAsiento}`);
+      asiento.title = `Fila ${indiceFila + 1}, asiento ${indiceColumna + 1}: ${estadoAsiento}`;
+      asientosFila.appendChild(asiento);
+    }
+
+    fila.appendChild(asientosFila);
+    fragmento.appendChild(fila);
+  }
+
+  mapa.appendChild(fragmento);
+}
+
+if (typeof document !== "undefined") {
+  renderizarSalaWeb();
+} else {
+  ejecutarDemostracionesConsola();
+}
