@@ -85,6 +85,69 @@ export function contarAsientos(sala: number[][]): [number, number] {
   return [cantidadOcupados, cantidadDisponibles];
 }
 
+// Busca y devuelve el primer par libre horizontal dentro de una misma fila.
+export function buscarAsientosContiguos(sala: number[][]): [[number, number], [number, number]] | null {
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length - 1; indiceColumna++) {
+      if (
+        sala[indiceFila][indiceColumna] === ASIENTO_DISPONIBLE &&
+        sala[indiceFila][indiceColumna + 1] === ASIENTO_DISPONIBLE
+      ) {
+        return [
+          [indiceFila + 1, indiceColumna + 1],
+          [indiceFila + 1, indiceColumna + 2],
+        ];
+      }
+    }
+  }
+
+  return null;
+}
+
+// Crea una sala de las dimensiones del ejercicio con todos sus asientos ocupados.
+function crearSalaOcupada(): number[][] {
+  const sala: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      sala[indiceFila][indiceColumna] = ASIENTO_OCUPADO;
+    }
+  }
+
+  return sala;
+}
+
+// Muestra el resultado real de la búsqueda y comprueba que no alteró la sala.
+function mostrarResultadoBusqueda(nombreEscenario: string, sala: number[][]): void {
+  const copiaSala: number[][] = [];
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    const filaCopiada: number[] = [];
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      filaCopiada.push(sala[indiceFila][indiceColumna]);
+    }
+    copiaSala.push(filaCopiada);
+  }
+
+  const resultado: [[number, number], [number, number]] | null = buscarAsientosContiguos(sala);
+  console.log(`${nombreEscenario}:`);
+
+  if (resultado === null) {
+    console.log("No se encontraron dos asientos contiguos disponibles.");
+  } else {
+    console.log(`Se encontraron asientos contiguos en la fila ${resultado[0][0]}: ${resultado[0][1]} y ${resultado[1][1]}.`);
+  }
+
+  let salaSinCambios: boolean = true;
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      if (sala[indiceFila][indiceColumna] !== copiaSala[indiceFila][indiceColumna]) {
+        salaSinCambios = false;
+      }
+    }
+  }
+  console.log(`La búsqueda no modificó la sala: ${salaSinCambios ? "sí" : "no"}.`);
+}
+
 const salaInicial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
 
 console.log("¡Bienvenido a Cinema Seat Manager!");
@@ -166,3 +229,32 @@ console.log(`Asientos ocupados: ${ocupadosFinales}`);
 console.log(`Asientos disponibles: ${disponiblesFinales}`);
 console.log(`La suma coincide con la capacidad: ${ocupadosFinales + disponiblesFinales === capacidadTotal ? "sí" : "no"}.`);
 console.log(`contarAsientos no modificó la matriz: ${conteoSinModificarSala ? "sí" : "no"}.`);
+
+console.log("\n=== PRUEBAS DE ASIENTOS CONTIGUOS ===");
+
+const salaContiguaVacia: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+mostrarResultadoBusqueda("Escenario A — Sala completamente vacía", salaContiguaVacia);
+
+const salaContiguaParcial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+reservarAsiento(salaContiguaParcial, 1, 1);
+reservarAsiento(salaContiguaParcial, 1, 2);
+mostrarResultadoBusqueda("Escenario B — Sala parcialmente ocupada", salaContiguaParcial);
+
+const salaContiguaAislados: number[][] = crearSalaOcupada();
+salaContiguaAislados[0][0] = ASIENTO_DISPONIBLE;
+salaContiguaAislados[0][2] = ASIENTO_DISPONIBLE;
+salaContiguaAislados[0][4] = ASIENTO_DISPONIBLE;
+mostrarResultadoBusqueda("Escenario C — Asientos libres aislados", salaContiguaAislados);
+
+const salaContiguaLlena: number[][] = crearSalaOcupada();
+mostrarResultadoBusqueda("Escenario D — Sala completamente llena", salaContiguaLlena);
+
+const salaContiguaFinal: number[][] = crearSalaOcupada();
+salaContiguaFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 2] = ASIENTO_DISPONIBLE;
+salaContiguaFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
+mostrarResultadoBusqueda("Escenario E — Único par libre al final", salaContiguaFinal);
+
+const salaContiguaEntreFilas: number[][] = crearSalaOcupada();
+salaContiguaEntreFilas[1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
+salaContiguaEntreFilas[2][0] = ASIENTO_DISPONIBLE;
+mostrarResultadoBusqueda("Escenario F — Libres separados entre filas", salaContiguaEntreFilas);
