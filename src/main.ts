@@ -224,16 +224,34 @@ function obtenerElementoWeb(id: string): HTMLElement {
   return elemento;
 }
 
-function renderizarSalaWeb(): void {
-  const salaWeb: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+function actualizarEstadisticasWeb(salaWeb: number[][]): void {
   const [ocupadosWeb, disponiblesWeb]: [number, number] = contarAsientos(salaWeb);
-  const capacidadWeb: number = salaWeb.length * salaWeb[0].length;
-
+  const capacidadWeb: number = ocupadosWeb + disponiblesWeb;
   obtenerElementoWeb("total-count").textContent = String(capacidadWeb);
   obtenerElementoWeb("occupied-count").textContent = String(ocupadosWeb);
   obtenerElementoWeb("available-count").textContent = String(disponiblesWeb);
+}
+
+function actualizarAspectoAsiento(
+  asiento: HTMLButtonElement,
+  estaOcupado: boolean,
+  fila: number,
+  columna: number,
+): void {
+  const estadoAsiento: string = estaOcupado ? "ocupado" : "disponible";
+  asiento.className = estaOcupado
+    ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+  asiento.setAttribute("aria-label", `Fila ${fila}, asiento ${columna}: ${estadoAsiento}`);
+  asiento.title = `Fila ${fila}, asiento ${columna}: ${estadoAsiento}`;
+}
+
+function renderizarSalaWeb(): void {
+  const salaWeb: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+  actualizarEstadisticasWeb(salaWeb);
 
   const mapa: HTMLElement = obtenerElementoWeb("seat-map");
+  const mensajeReserva: HTMLElement = obtenerElementoWeb("booking-message");
   const fragmento: DocumentFragment = document.createDocumentFragment();
   const encabezadoColumnas: HTMLDivElement = document.createElement("div");
   encabezadoColumnas.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
@@ -265,20 +283,30 @@ function renderizarSalaWeb(): void {
 
     const asientosFila: HTMLDivElement = document.createElement("div");
     asientosFila.className = "grid grid-cols-10 gap-1.5 sm:gap-2";
-    asientosFila.setAttribute("role", "list");
+    asientosFila.setAttribute("role", "group");
     asientosFila.setAttribute("aria-label", `Asientos de la fila ${indiceFila + 1}`);
 
     for (let indiceColumna: number = 0; indiceColumna < salaWeb[indiceFila].length; indiceColumna++) {
-      const asiento: HTMLSpanElement = document.createElement("span");
+      const asiento: HTMLButtonElement = document.createElement("button");
       const estaOcupado: boolean = salaWeb[indiceFila][indiceColumna] === ASIENTO_OCUPADO;
-      const estadoAsiento: string = estaOcupado ? "ocupado" : "disponible";
+      const filaVisible: number = indiceFila + 1;
+      const columnaVisible: number = indiceColumna + 1;
 
-      asiento.className = estaOcupado
-        ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 shadow-sm"
-        : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 shadow-sm";
-      asiento.setAttribute("role", "listitem");
-      asiento.setAttribute("aria-label", `Fila ${indiceFila + 1}, asiento ${indiceColumna + 1}: ${estadoAsiento}`);
-      asiento.title = `Fila ${indiceFila + 1}, asiento ${indiceColumna + 1}: ${estadoAsiento}`;
+      asiento.type = "button";
+      asiento.className = "aspect-square rounded-md border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+      actualizarAspectoAsiento(asiento, estaOcupado, filaVisible, columnaVisible);
+      asiento.addEventListener("click", () => {
+        const resultado: string = reservarAsiento(salaWeb, filaVisible, columnaVisible);
+        mensajeReserva.textContent = resultado;
+
+        actualizarAspectoAsiento(
+          asiento,
+          salaWeb[indiceFila][indiceColumna] === ASIENTO_OCUPADO,
+          filaVisible,
+          columnaVisible,
+        );
+        actualizarEstadisticasWeb(salaWeb);
+      });
       asientosFila.appendChild(asiento);
     }
 

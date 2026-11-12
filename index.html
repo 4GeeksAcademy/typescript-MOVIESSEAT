@@ -52,11 +52,17 @@
         <div aria-hidden="true" class="mx-auto mb-3 h-2 w-4/5 rounded-full bg-gradient-to-r from-transparent via-slate-300 to-transparent shadow-[0_8px_24px_rgba(148,163,184,0.18)]"></div>
         <p class="mb-8 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Pantalla</p>
         <div id="seat-map" class="mx-auto flex max-w-2xl flex-col gap-3"></div>
+        <p
+          id="booking-message"
+          aria-live="polite"
+          aria-atomic="true"
+          class="mt-6 min-h-6 text-center text-sm font-medium text-emerald-200"
+        ></p>
         <p class="mt-8 text-center text-xs text-slate-500">Filas y columnas numeradas desde 1</p>
       </section>
 
       <p class="mt-6 text-center text-sm text-slate-500">
-        Visualización de disponibilidad. La reserva interactiva estará disponible próximamente.
+        Selecciona un asiento disponible para reservarlo. Las reservas se mantienen mientras esta página permanezca abierta.
       </p>
     </main>
     <script type="module" src="/src/main.ts"></script>
