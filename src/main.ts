@@ -241,10 +241,11 @@ function actualizarAspectoAsiento(
 ): void {
   const estadoAsiento: string = estaOcupado ? "ocupado" : "disponible";
   asiento.className = recomendado
-    ? "aspect-square rounded-md border border-amber-200 bg-amber-400 text-slate-950 shadow-[0_0_14px_rgba(251,191,36,0.55)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    ? "aspect-square rounded-md border border-amber-200 bg-amber-400 font-bold text-slate-950 shadow-[0_0_14px_rgba(251,191,36,0.55)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
     : estaOcupado
-    ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-    : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+    ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 font-bold text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 font-bold text-slate-950 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+  asiento.textContent = recomendado ? "★" : estaOcupado ? "X" : "L";
   const descripcionRecomendacion: string = recomendado ? ", recomendado para sentarse juntos" : "";
   asiento.setAttribute("aria-label", `Fila ${fila}, asiento ${columna}: ${estadoAsiento}${descripcionRecomendacion}`);
   asiento.title = `Fila ${fila}, asiento ${columna}: ${estadoAsiento}${descripcionRecomendacion}`;
@@ -259,6 +260,25 @@ function renderizarSalaWeb(): void {
   const botonBuscarPareja: HTMLElement = obtenerElementoWeb("find-pair-button");
   const asientosWeb: HTMLButtonElement[][] = [];
   let parejaRecomendada: [[number, number], [number, number]] | null = null;
+
+  function actualizarMapaWeb(): void {
+    for (let filaBoton: number = 0; filaBoton < asientosWeb.length; filaBoton++) {
+      for (let columnaBoton: number = 0; columnaBoton < asientosWeb[filaBoton].length; columnaBoton++) {
+        const esRecomendado: boolean = parejaRecomendada !== null && (
+          (parejaRecomendada[0][0] === filaBoton + 1 && parejaRecomendada[0][1] === columnaBoton + 1) ||
+          (parejaRecomendada[1][0] === filaBoton + 1 && parejaRecomendada[1][1] === columnaBoton + 1)
+        );
+        actualizarAspectoAsiento(
+          asientosWeb[filaBoton][columnaBoton],
+          salaWeb[filaBoton][columnaBoton] === ASIENTO_OCUPADO,
+          filaBoton + 1,
+          columnaBoton + 1,
+          esRecomendado,
+        );
+      }
+    }
+  }
+
   const fragmento: DocumentFragment = document.createDocumentFragment();
   const encabezadoColumnas: HTMLDivElement = document.createElement("div");
   encabezadoColumnas.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
@@ -312,21 +332,7 @@ function renderizarSalaWeb(): void {
           parejaRecomendada = null;
         }
 
-        for (let filaBoton: number = 0; filaBoton < asientosWeb.length; filaBoton++) {
-          for (let columnaBoton: number = 0; columnaBoton < asientosWeb[filaBoton].length; columnaBoton++) {
-            const esRecomendado: boolean = parejaRecomendada !== null && (
-              (parejaRecomendada[0][0] === filaBoton + 1 && parejaRecomendada[0][1] === columnaBoton + 1) ||
-              (parejaRecomendada[1][0] === filaBoton + 1 && parejaRecomendada[1][1] === columnaBoton + 1)
-            );
-            actualizarAspectoAsiento(
-              asientosWeb[filaBoton][columnaBoton],
-              salaWeb[filaBoton][columnaBoton] === ASIENTO_OCUPADO,
-              filaBoton + 1,
-              columnaBoton + 1,
-              esRecomendado,
-            );
-          }
-        }
+        actualizarMapaWeb();
         actualizarEstadisticasWeb(salaWeb);
       });
       asientosFila.appendChild(asiento);
@@ -342,22 +348,7 @@ function renderizarSalaWeb(): void {
 
   botonBuscarPareja.addEventListener("click", () => {
     parejaRecomendada = buscarAsientosContiguos(salaWeb);
-
-    for (let filaBoton: number = 0; filaBoton < asientosWeb.length; filaBoton++) {
-      for (let columnaBoton: number = 0; columnaBoton < asientosWeb[filaBoton].length; columnaBoton++) {
-        const esRecomendado: boolean = parejaRecomendada !== null && (
-          (parejaRecomendada[0][0] === filaBoton + 1 && parejaRecomendada[0][1] === columnaBoton + 1) ||
-          (parejaRecomendada[1][0] === filaBoton + 1 && parejaRecomendada[1][1] === columnaBoton + 1)
-        );
-        actualizarAspectoAsiento(
-          asientosWeb[filaBoton][columnaBoton],
-          salaWeb[filaBoton][columnaBoton] === ASIENTO_OCUPADO,
-          filaBoton + 1,
-          columnaBoton + 1,
-          esRecomendado,
-        );
-      }
-    }
+    actualizarMapaWeb();
 
     if (parejaRecomendada === null) {
       mensajeReserva.textContent = "No se encontraron dos asientos contiguos disponibles.";
