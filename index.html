@@ -46,12 +46,23 @@
           <ul aria-label="Leyenda de disponibilidad" class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
             <li class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded-sm bg-emerald-400"></span>Disponible</li>
             <li class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded-sm bg-rose-400"></span>Ocupado</li>
+            <li class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded-sm bg-amber-400"></span>Pareja recomendada</li>
           </ul>
         </div>
 
         <div aria-hidden="true" class="mx-auto mb-3 h-2 w-4/5 rounded-full bg-gradient-to-r from-transparent via-slate-300 to-transparent shadow-[0_8px_24px_rgba(148,163,184,0.18)]"></div>
         <p class="mb-8 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Pantalla</p>
         <div id="seat-map" class="mx-auto flex max-w-2xl flex-col gap-3"></div>
+        <div class="mt-6 flex justify-center">
+          <button
+            id="find-pair-button"
+            type="button"
+            aria-label="Buscar los primeros dos asientos libres contiguos"
+            class="rounded-xl border border-amber-300/40 bg-amber-400/10 px-5 py-3 text-sm font-semibold text-amber-200 transition-colors hover:border-amber-300 hover:bg-amber-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          >
+            Buscar 2 asientos juntos
+          </button>
+        </div>
         <p
           id="booking-message"
           aria-live="polite"

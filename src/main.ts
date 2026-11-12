@@ -237,13 +237,17 @@ function actualizarAspectoAsiento(
   estaOcupado: boolean,
   fila: number,
   columna: number,
+  recomendado: boolean,
 ): void {
   const estadoAsiento: string = estaOcupado ? "ocupado" : "disponible";
-  asiento.className = estaOcupado
+  asiento.className = recomendado
+    ? "aspect-square rounded-md border border-amber-200 bg-amber-400 text-slate-950 shadow-[0_0_14px_rgba(251,191,36,0.55)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    : estaOcupado
     ? "aspect-square rounded-md border border-rose-400/40 bg-rose-500/80 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
     : "aspect-square rounded-md border border-emerald-300/30 bg-emerald-400/80 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
-  asiento.setAttribute("aria-label", `Fila ${fila}, asiento ${columna}: ${estadoAsiento}`);
-  asiento.title = `Fila ${fila}, asiento ${columna}: ${estadoAsiento}`;
+  const descripcionRecomendacion: string = recomendado ? ", recomendado para sentarse juntos" : "";
+  asiento.setAttribute("aria-label", `Fila ${fila}, asiento ${columna}: ${estadoAsiento}${descripcionRecomendacion}`);
+  asiento.title = `Fila ${fila}, asiento ${columna}: ${estadoAsiento}${descripcionRecomendacion}`;
 }
 
 function renderizarSalaWeb(): void {
@@ -252,6 +256,9 @@ function renderizarSalaWeb(): void {
 
   const mapa: HTMLElement = obtenerElementoWeb("seat-map");
   const mensajeReserva: HTMLElement = obtenerElementoWeb("booking-message");
+  const botonBuscarPareja: HTMLElement = obtenerElementoWeb("find-pair-button");
+  const asientosWeb: HTMLButtonElement[][] = [];
+  let parejaRecomendada: [[number, number], [number, number]] | null = null;
   const fragmento: DocumentFragment = document.createDocumentFragment();
   const encabezadoColumnas: HTMLDivElement = document.createElement("div");
   encabezadoColumnas.className = "grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 sm:gap-4";
@@ -285,6 +292,7 @@ function renderizarSalaWeb(): void {
     asientosFila.className = "grid grid-cols-10 gap-1.5 sm:gap-2";
     asientosFila.setAttribute("role", "group");
     asientosFila.setAttribute("aria-label", `Asientos de la fila ${indiceFila + 1}`);
+    const botonesFila: HTMLButtonElement[] = [];
 
     for (let indiceColumna: number = 0; indiceColumna < salaWeb[indiceFila].length; indiceColumna++) {
       const asiento: HTMLButtonElement = document.createElement("button");
@@ -294,27 +302,69 @@ function renderizarSalaWeb(): void {
 
       asiento.type = "button";
       asiento.className = "aspect-square rounded-md border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
-      actualizarAspectoAsiento(asiento, estaOcupado, filaVisible, columnaVisible);
+      actualizarAspectoAsiento(asiento, estaOcupado, filaVisible, columnaVisible, false);
       asiento.addEventListener("click", () => {
+        const estadoAnterior: number = salaWeb[indiceFila][indiceColumna];
         const resultado: string = reservarAsiento(salaWeb, filaVisible, columnaVisible);
         mensajeReserva.textContent = resultado;
 
-        actualizarAspectoAsiento(
-          asiento,
-          salaWeb[indiceFila][indiceColumna] === ASIENTO_OCUPADO,
-          filaVisible,
-          columnaVisible,
-        );
+        if (salaWeb[indiceFila][indiceColumna] !== estadoAnterior) {
+          parejaRecomendada = null;
+        }
+
+        for (let filaBoton: number = 0; filaBoton < asientosWeb.length; filaBoton++) {
+          for (let columnaBoton: number = 0; columnaBoton < asientosWeb[filaBoton].length; columnaBoton++) {
+            const esRecomendado: boolean = parejaRecomendada !== null && (
+              (parejaRecomendada[0][0] === filaBoton + 1 && parejaRecomendada[0][1] === columnaBoton + 1) ||
+              (parejaRecomendada[1][0] === filaBoton + 1 && parejaRecomendada[1][1] === columnaBoton + 1)
+            );
+            actualizarAspectoAsiento(
+              asientosWeb[filaBoton][columnaBoton],
+              salaWeb[filaBoton][columnaBoton] === ASIENTO_OCUPADO,
+              filaBoton + 1,
+              columnaBoton + 1,
+              esRecomendado,
+            );
+          }
+        }
         actualizarEstadisticasWeb(salaWeb);
       });
       asientosFila.appendChild(asiento);
+      botonesFila.push(asiento);
     }
 
+    asientosWeb.push(botonesFila);
     fila.appendChild(asientosFila);
     fragmento.appendChild(fila);
   }
 
   mapa.appendChild(fragmento);
+
+  botonBuscarPareja.addEventListener("click", () => {
+    parejaRecomendada = buscarAsientosContiguos(salaWeb);
+
+    for (let filaBoton: number = 0; filaBoton < asientosWeb.length; filaBoton++) {
+      for (let columnaBoton: number = 0; columnaBoton < asientosWeb[filaBoton].length; columnaBoton++) {
+        const esRecomendado: boolean = parejaRecomendada !== null && (
+          (parejaRecomendada[0][0] === filaBoton + 1 && parejaRecomendada[0][1] === columnaBoton + 1) ||
+          (parejaRecomendada[1][0] === filaBoton + 1 && parejaRecomendada[1][1] === columnaBoton + 1)
+        );
+        actualizarAspectoAsiento(
+          asientosWeb[filaBoton][columnaBoton],
+          salaWeb[filaBoton][columnaBoton] === ASIENTO_OCUPADO,
+          filaBoton + 1,
+          columnaBoton + 1,
+          esRecomendado,
+        );
+      }
+    }
+
+    if (parejaRecomendada === null) {
+      mensajeReserva.textContent = "No se encontraron dos asientos contiguos disponibles.";
+    } else {
+      mensajeReserva.textContent = `Se encontraron dos asientos juntos: fila ${parejaRecomendada[0][0]}, asientos ${parejaRecomendada[0][1]} y ${parejaRecomendada[1][1]}.`;
+    }
+  });
 }
 
 if (typeof document !== "undefined") {
