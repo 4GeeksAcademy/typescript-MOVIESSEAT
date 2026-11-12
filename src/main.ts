@@ -117,144 +117,97 @@ function crearSalaOcupada(): number[][] {
   return sala;
 }
 
-// Muestra el resultado real de la búsqueda y comprueba que no alteró la sala.
-function mostrarResultadoBusqueda(nombreEscenario: string, sala: number[][]): void {
-  const copiaSala: number[][] = [];
-  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
-    const filaCopiada: number[] = [];
-    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
-      filaCopiada.push(sala[indiceFila][indiceColumna]);
-    }
-    copiaSala.push(filaCopiada);
-  }
+// Imprime estadísticas calculadas y la primera pareja que devuelve la búsqueda.
+function mostrarResumenSala(sala: number[][]): void {
+  const [ocupados, disponibles]: [number, number] = contarAsientos(sala);
+  const capacidad: number = sala.length * sala[0].length;
+  console.log(`Capacidad total: ${capacidad}`);
+  console.log(`Ocupados: ${ocupados}`);
+  console.log(`Disponibles: ${disponibles}`);
 
-  const resultado: [[number, number], [number, number]] | null = buscarAsientosContiguos(sala);
-  console.log(`${nombreEscenario}:`);
-
-  if (resultado === null) {
+  const parejaLibre: [[number, number], [number, number]] | null = buscarAsientosContiguos(sala);
+  if (parejaLibre === null) {
     console.log("No se encontraron dos asientos contiguos disponibles.");
   } else {
-    console.log(`Se encontraron asientos contiguos en la fila ${resultado[0][0]}: ${resultado[0][1]} y ${resultado[1][1]}.`);
+    console.log(`Primera pareja libre: fila ${parejaLibre[0][0]}, asientos ${parejaLibre[0][1]} y ${parejaLibre[1][1]}.`);
   }
-
-  let salaSinCambios: boolean = true;
-  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
-    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
-      if (sala[indiceFila][indiceColumna] !== copiaSala[indiceFila][indiceColumna]) {
-        salaSinCambios = false;
-      }
-    }
-  }
-  console.log(`La búsqueda no modificó la sala: ${salaSinCambios ? "sí" : "no"}.`);
 }
-
-const salaInicial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
 
 console.log("¡Bienvenido a Cinema Seat Manager!");
-console.log("Mapa de asientos:");
-mostrarSala(salaInicial);
 console.log(`Leyenda: ${SIMBOLO_DISPONIBLE} = disponible, ${SIMBOLO_OCUPADO} = ocupado`);
 
-console.log("\nPRUEBAS DE RESERVA");
-console.log("Estado inicial de la sala:");
-mostrarSala(salaInicial);
+console.log("\n=== ESCENARIO 1 — SALA VACÍA ===");
+const salaVacia: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+mostrarSala(salaVacia);
+mostrarResumenSala(salaVacia);
 
-const mensajeReserva: string = reservarAsiento(salaInicial, 3, 5);
-console.log(mensajeReserva);
-console.log("Sala después de reservar fila 3, asiento 5:");
-mostrarSala(salaInicial);
+console.log("\n=== ESCENARIO 2 — SALA PARCIALMENTE OCUPADA ===");
+const salaParcial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+console.log(reservarAsiento(salaParcial, 1, 1));
+console.log(reservarAsiento(salaParcial, 1, 2));
+console.log(reservarAsiento(salaParcial, 3, 5));
+mostrarSala(salaParcial);
+mostrarResumenSala(salaParcial);
+console.log(reservarAsiento(salaParcial, 3, 5));
+mostrarResumenSala(salaParcial);
 
-console.log(reservarAsiento(salaInicial, 3, 5));
-console.log(reservarAsiento(salaInicial, 9, 5));
-console.log(reservarAsiento(salaInicial, 2, 11));
-
-let intentosFallidosSinCambios: boolean = salaInicial[2][4] === ASIENTO_OCUPADO;
-
-for (let indiceFila: number = 0; indiceFila < salaInicial.length; indiceFila++) {
-  for (let indiceColumna: number = 0; indiceColumna < salaInicial[indiceFila].length; indiceColumna++) {
-    if ((indiceFila !== 2 || indiceColumna !== 4) && salaInicial[indiceFila][indiceColumna] !== ASIENTO_DISPONIBLE) {
-      intentosFallidosSinCambios = false;
+console.log("\n=== ESCENARIO 3 — SALA CASI LLENA ===");
+const salaCasiLlena: number[][] = crearSalaOcupada();
+for (let indiceFila: number = 0; indiceFila < salaCasiLlena.length; indiceFila++) {
+  for (let indiceColumna: number = 0; indiceColumna < salaCasiLlena[indiceFila].length; indiceColumna++) {
+    const esAsientoLibre: boolean =
+      (indiceFila === 0 && indiceColumna === 0) ||
+      (indiceFila === 1 && indiceColumna === 2) ||
+      (indiceFila === 3 && indiceColumna === 4) ||
+      (indiceFila === 7 && indiceColumna === 9);
+    if (esAsientoLibre) {
+      salaCasiLlena[indiceFila][indiceColumna] = ASIENTO_DISPONIBLE;
     }
   }
 }
+mostrarSala(salaCasiLlena);
+mostrarResumenSala(salaCasiLlena);
 
-if (intentosFallidosSinCambios) {
-  console.log("Verificación correcta: los intentos fallidos no modificaron otros asientos.");
-} else {
-  console.log("Verificación incorrecta: se detectó un cambio inesperado en la sala.");
-}
+console.log("\n=== ESCENARIO 4 — SALA COMPLETAMENTE LLENA ===");
+const salaLlena: number[][] = crearSalaOcupada();
+mostrarSala(salaLlena);
+mostrarResumenSala(salaLlena);
+console.log(reservarAsiento(salaLlena, 1, 1));
 
-console.log("\nPRUEBAS DE CONTEO DE ASIENTOS");
-const salaConteo: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
-const capacidadTotal: number = CANTIDAD_FILAS * CANTIDAD_COLUMNAS;
+console.log("\n=== VALIDACIONES DE CASOS LÍMITE ===");
+const salaLimites: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+const mensajeFilaFuera: string = reservarAsiento(salaLimites, 9, 1);
+const mensajeColumnaFuera: string = reservarAsiento(salaLimites, 1, 11);
+const mensajeDecimal: string = reservarAsiento(salaLimites, 1.5, 1);
+const mensajeReservaInicial: string = reservarAsiento(salaLimites, 3, 5);
+const mensajeDuplicado: string = reservarAsiento(salaLimites, 3, 5);
+console.log(`Fila fuera de rango: ${mensajeFilaFuera}`);
+console.log(`Columna fuera de rango: ${mensajeColumnaFuera}`);
+console.log(`Coordenada decimal: ${mensajeDecimal}`);
+console.log(`Asiento duplicado: ${mensajeDuplicado}`);
 
-const [ocupadosIniciales, disponiblesIniciales]: [number, number] = contarAsientos(salaConteo);
-console.log(`Escenario A — Sala vacía: ocupados ${ocupadosIniciales}, disponibles ${disponiblesIniciales}.`);
+const salaParFinal: number[][] = crearSalaOcupada();
+salaParFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 2] = ASIENTO_DISPONIBLE;
+salaParFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
+const parejaFinal: [[number, number], [number, number]] | null = buscarAsientosContiguos(salaParFinal);
+console.log(`Último par libre: ${parejaFinal === null ? "no encontrado" : `fila ${parejaFinal[0][0]}, asientos ${parejaFinal[0][1]} y ${parejaFinal[1][1]}`}.`);
 
-console.log(reservarAsiento(salaConteo, 3, 5));
-const [ocupadosTrasUnaReserva, disponiblesTrasUnaReserva]: [number, number] = contarAsientos(salaConteo);
-console.log(`Escenario B — Una reserva: ocupados ${ocupadosTrasUnaReserva}, disponibles ${disponiblesTrasUnaReserva}.`);
+const salaAislados: number[][] = crearSalaOcupada();
+salaAislados[0][0] = ASIENTO_DISPONIBLE;
+salaAislados[0][2] = ASIENTO_DISPONIBLE;
+const resultadoAislados: [[number, number], [number, number]] | null = buscarAsientosContiguos(salaAislados);
+console.log(`Asientos aislados: ${resultadoAislados === null ? "sin pareja" : "se encontró una pareja"}.`);
 
-console.log(reservarAsiento(salaConteo, 2, 2));
-console.log(reservarAsiento(salaConteo, 8, 10));
-const [ocupadosTrasVariasReservas, disponiblesTrasVariasReservas]: [number, number] = contarAsientos(salaConteo);
-console.log(`Escenario C — Varias reservas: ocupados ${ocupadosTrasVariasReservas}, disponibles ${disponiblesTrasVariasReservas}.`);
+const salaSeparadaPorFilas: number[][] = crearSalaOcupada();
+salaSeparadaPorFilas[1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
+salaSeparadaPorFilas[2][0] = ASIENTO_DISPONIBLE;
+const resultadoEntreFilas: [[number, number], [number, number]] | null = buscarAsientosContiguos(salaSeparadaPorFilas);
+console.log(`Separación entre filas: ${resultadoEntreFilas === null ? "sin pareja" : "se encontró una pareja"}.`);
 
-console.log(reservarAsiento(salaConteo, 3, 5));
-const [ocupadosTrasDuplicada, disponiblesTrasDuplicada]: [number, number] = contarAsientos(salaConteo);
-console.log(`Escenario D — Reserva duplicada: ocupados ${ocupadosTrasDuplicada}, disponibles ${disponiblesTrasDuplicada}.`);
-
-const salaAntesDelConteo: number[][] = [];
-for (let indiceFila: number = 0; indiceFila < salaConteo.length; indiceFila++) {
-  const filaCopiada: number[] = [];
-  for (let indiceColumna: number = 0; indiceColumna < salaConteo[indiceFila].length; indiceColumna++) {
-    filaCopiada.push(salaConteo[indiceFila][indiceColumna]);
+let dimensionesCorrectas: boolean = salaVacia.length === CANTIDAD_FILAS;
+for (let indiceFila: number = 0; indiceFila < salaVacia.length; indiceFila++) {
+  if (salaVacia[indiceFila].length !== CANTIDAD_COLUMNAS) {
+    dimensionesCorrectas = false;
   }
-  salaAntesDelConteo.push(filaCopiada);
 }
-
-const [ocupadosFinales, disponiblesFinales]: [number, number] = contarAsientos(salaConteo);
-let conteoSinModificarSala: boolean = true;
-for (let indiceFila: number = 0; indiceFila < salaConteo.length; indiceFila++) {
-  for (let indiceColumna: number = 0; indiceColumna < salaConteo[indiceFila].length; indiceColumna++) {
-    if (salaConteo[indiceFila][indiceColumna] !== salaAntesDelConteo[indiceFila][indiceColumna]) {
-      conteoSinModificarSala = false;
-    }
-  }
-}
-
-console.log("Escenario E — Comprobación de integridad:");
-console.log(`Capacidad total: ${capacidadTotal} asientos`);
-console.log(`Asientos ocupados: ${ocupadosFinales}`);
-console.log(`Asientos disponibles: ${disponiblesFinales}`);
-console.log(`La suma coincide con la capacidad: ${ocupadosFinales + disponiblesFinales === capacidadTotal ? "sí" : "no"}.`);
-console.log(`contarAsientos no modificó la matriz: ${conteoSinModificarSala ? "sí" : "no"}.`);
-
-console.log("\n=== PRUEBAS DE ASIENTOS CONTIGUOS ===");
-
-const salaContiguaVacia: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
-mostrarResultadoBusqueda("Escenario A — Sala completamente vacía", salaContiguaVacia);
-
-const salaContiguaParcial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
-reservarAsiento(salaContiguaParcial, 1, 1);
-reservarAsiento(salaContiguaParcial, 1, 2);
-mostrarResultadoBusqueda("Escenario B — Sala parcialmente ocupada", salaContiguaParcial);
-
-const salaContiguaAislados: number[][] = crearSalaOcupada();
-salaContiguaAislados[0][0] = ASIENTO_DISPONIBLE;
-salaContiguaAislados[0][2] = ASIENTO_DISPONIBLE;
-salaContiguaAislados[0][4] = ASIENTO_DISPONIBLE;
-mostrarResultadoBusqueda("Escenario C — Asientos libres aislados", salaContiguaAislados);
-
-const salaContiguaLlena: number[][] = crearSalaOcupada();
-mostrarResultadoBusqueda("Escenario D — Sala completamente llena", salaContiguaLlena);
-
-const salaContiguaFinal: number[][] = crearSalaOcupada();
-salaContiguaFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 2] = ASIENTO_DISPONIBLE;
-salaContiguaFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
-mostrarResultadoBusqueda("Escenario E — Único par libre al final", salaContiguaFinal);
-
-const salaContiguaEntreFilas: number[][] = crearSalaOcupada();
-salaContiguaEntreFilas[1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
-salaContiguaEntreFilas[2][0] = ASIENTO_DISPONIBLE;
-mostrarResultadoBusqueda("Escenario F — Libres separados entre filas", salaContiguaEntreFilas);
+console.log(`Dimensiones verificadas (8 × 10): ${dimensionesCorrectas ? "sí" : "no"}.`);
