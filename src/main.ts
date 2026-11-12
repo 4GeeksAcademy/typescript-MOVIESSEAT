@@ -1,12 +1,213 @@
-if (typeof document !== "undefined") {
-  import("./style.css").then(() => {
-    const app = document.querySelector<HTMLParagraphElement>("#app");
-    if (app) {
-      app.textContent = "If you can see this, Tailwind is working.";
+const CANTIDAD_FILAS: number = 8;
+const CANTIDAD_COLUMNAS: number = 10;
+const ASIENTO_DISPONIBLE: number = 0;
+const ASIENTO_OCUPADO: number = 1;
+const SIMBOLO_DISPONIBLE: string = "L";
+const SIMBOLO_OCUPADO: string = "X";
+
+// Crea una matriz nueva con todos los asientos disponibles.
+export function inicializarSala(cantidadFilas: number, cantidadColumnas: number): number[][] {
+  const sala: number[][] = [];
+
+  for (let indiceFila: number = 0; indiceFila < cantidadFilas; indiceFila++) {
+    const fila: number[] = [];
+
+    for (let indiceColumna: number = 0; indiceColumna < cantidadColumnas; indiceColumna++) {
+      fila.push(ASIENTO_DISPONIBLE);
     }
-  });
+
+    sala.push(fila);
+  }
+
+  return sala;
 }
 
-console.log("Hello from src/main.ts");
+// Imprime la matriz con filas y columnas numeradas desde 1, sin modificarla.
+export function mostrarSala(sala: number[][]): void {
+  let encabezadoColumnas: string = "    ";
 
-export {};
+  for (let indiceColumna: number = 0; indiceColumna < sala[0].length; indiceColumna++) {
+    encabezadoColumnas += ` ${String(indiceColumna + 1).padStart(2, " ")} `;
+  }
+
+  console.log(encabezadoColumnas);
+
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    let textoFila: string = `${String(indiceFila + 1).padStart(2, " ")} |`;
+
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      const simbolo: string = sala[indiceFila][indiceColumna] === ASIENTO_DISPONIBLE
+        ? SIMBOLO_DISPONIBLE
+        : SIMBOLO_OCUPADO;
+      textoFila += ` ${simbolo.padStart(2, " ")} `;
+    }
+
+    console.log(textoFila);
+  }
+}
+
+// Reserva el asiento indicado y devuelve un mensaje según el resultado.
+export function reservarAsiento(sala: number[][], fila: number, columna: number): string {
+  if (!Number.isFinite(fila) || !Number.isInteger(fila) || !Number.isFinite(columna) || !Number.isInteger(columna)) {
+    return "No se pudo reservar: la fila y la columna deben ser números enteros finitos.";
+  } else if (fila < 1 || fila > sala.length) {
+    return "No se pudo reservar: la fila está fuera del rango de la sala.";
+  }
+
+  const indiceFila: number = fila - 1;
+  const indiceColumna: number = columna - 1;
+
+  if (columna < 1 || columna > sala[indiceFila].length) {
+    return "No se pudo reservar: la columna está fuera del rango de la sala.";
+  } else if (sala[indiceFila][indiceColumna] !== ASIENTO_DISPONIBLE) {
+    return "No se pudo reservar: el asiento ya está ocupado.";
+  } else {
+    sala[indiceFila][indiceColumna] = ASIENTO_OCUPADO;
+    return `Reserva confirmada: fila ${fila}, asiento ${columna}.`;
+  }
+}
+
+// Cuenta los asientos ocupados y disponibles sin modificar la sala.
+export function contarAsientos(sala: number[][]): [number, number] {
+  let cantidadOcupados: number = 0;
+  let cantidadDisponibles: number = 0;
+
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      if (sala[indiceFila][indiceColumna] === ASIENTO_OCUPADO) {
+        cantidadOcupados++;
+      } else if (sala[indiceFila][indiceColumna] === ASIENTO_DISPONIBLE) {
+        cantidadDisponibles++;
+      }
+    }
+  }
+
+  return [cantidadOcupados, cantidadDisponibles];
+}
+
+// Busca y devuelve el primer par libre horizontal dentro de una misma fila.
+export function buscarAsientosContiguos(sala: number[][]): [[number, number], [number, number]] | null {
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length - 1; indiceColumna++) {
+      if (
+        sala[indiceFila][indiceColumna] === ASIENTO_DISPONIBLE &&
+        sala[indiceFila][indiceColumna + 1] === ASIENTO_DISPONIBLE
+      ) {
+        return [
+          [indiceFila + 1, indiceColumna + 1],
+          [indiceFila + 1, indiceColumna + 2],
+        ];
+      }
+    }
+  }
+
+  return null;
+}
+
+// Crea una sala de las dimensiones del ejercicio con todos sus asientos ocupados.
+function crearSalaOcupada(): number[][] {
+  const sala: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+
+  for (let indiceFila: number = 0; indiceFila < sala.length; indiceFila++) {
+    for (let indiceColumna: number = 0; indiceColumna < sala[indiceFila].length; indiceColumna++) {
+      sala[indiceFila][indiceColumna] = ASIENTO_OCUPADO;
+    }
+  }
+
+  return sala;
+}
+
+// Imprime estadísticas calculadas y la primera pareja que devuelve la búsqueda.
+function mostrarResumenSala(sala: number[][]): void {
+  const [ocupados, disponibles]: [number, number] = contarAsientos(sala);
+  const capacidad: number = sala.length * sala[0].length;
+  console.log(`Capacidad total: ${capacidad}`);
+  console.log(`Ocupados: ${ocupados}`);
+  console.log(`Disponibles: ${disponibles}`);
+
+  const parejaLibre: [[number, number], [number, number]] | null = buscarAsientosContiguos(sala);
+  if (parejaLibre === null) {
+    console.log("No se encontraron dos asientos contiguos disponibles.");
+  } else {
+    console.log(`Primera pareja libre: fila ${parejaLibre[0][0]}, asientos ${parejaLibre[0][1]} y ${parejaLibre[1][1]}.`);
+  }
+}
+
+console.log("¡Bienvenido a Cinema Seat Manager!");
+console.log(`Leyenda: ${SIMBOLO_DISPONIBLE} = disponible, ${SIMBOLO_OCUPADO} = ocupado`);
+
+console.log("\n=== ESCENARIO 1 — SALA VACÍA ===");
+const salaVacia: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+mostrarSala(salaVacia);
+mostrarResumenSala(salaVacia);
+
+console.log("\n=== ESCENARIO 2 — SALA PARCIALMENTE OCUPADA ===");
+const salaParcial: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+console.log(reservarAsiento(salaParcial, 1, 1));
+console.log(reservarAsiento(salaParcial, 1, 2));
+console.log(reservarAsiento(salaParcial, 3, 5));
+mostrarSala(salaParcial);
+mostrarResumenSala(salaParcial);
+console.log(reservarAsiento(salaParcial, 3, 5));
+mostrarResumenSala(salaParcial);
+
+console.log("\n=== ESCENARIO 3 — SALA CASI LLENA ===");
+const salaCasiLlena: number[][] = crearSalaOcupada();
+for (let indiceFila: number = 0; indiceFila < salaCasiLlena.length; indiceFila++) {
+  for (let indiceColumna: number = 0; indiceColumna < salaCasiLlena[indiceFila].length; indiceColumna++) {
+    const esAsientoLibre: boolean =
+      (indiceFila === 0 && indiceColumna === 0) ||
+      (indiceFila === 1 && indiceColumna === 2) ||
+      (indiceFila === 3 && indiceColumna === 4) ||
+      (indiceFila === 7 && indiceColumna === 9);
+    if (esAsientoLibre) {
+      salaCasiLlena[indiceFila][indiceColumna] = ASIENTO_DISPONIBLE;
+    }
+  }
+}
+mostrarSala(salaCasiLlena);
+mostrarResumenSala(salaCasiLlena);
+
+console.log("\n=== ESCENARIO 4 — SALA COMPLETAMENTE LLENA ===");
+const salaLlena: number[][] = crearSalaOcupada();
+mostrarSala(salaLlena);
+mostrarResumenSala(salaLlena);
+console.log(reservarAsiento(salaLlena, 1, 1));
+
+console.log("\n=== VALIDACIONES DE CASOS LÍMITE ===");
+const salaLimites: number[][] = inicializarSala(CANTIDAD_FILAS, CANTIDAD_COLUMNAS);
+const mensajeFilaFuera: string = reservarAsiento(salaLimites, 9, 1);
+const mensajeColumnaFuera: string = reservarAsiento(salaLimites, 1, 11);
+const mensajeDecimal: string = reservarAsiento(salaLimites, 1.5, 1);
+const mensajeReservaInicial: string = reservarAsiento(salaLimites, 3, 5);
+const mensajeDuplicado: string = reservarAsiento(salaLimites, 3, 5);
+console.log(`Fila fuera de rango: ${mensajeFilaFuera}`);
+console.log(`Columna fuera de rango: ${mensajeColumnaFuera}`);
+console.log(`Coordenada decimal: ${mensajeDecimal}`);
+console.log(`Asiento duplicado: ${mensajeDuplicado}`);
+
+const salaParFinal: number[][] = crearSalaOcupada();
+salaParFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 2] = ASIENTO_DISPONIBLE;
+salaParFinal[CANTIDAD_FILAS - 1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
+const parejaFinal: [[number, number], [number, number]] | null = buscarAsientosContiguos(salaParFinal);
+console.log(`Último par libre: ${parejaFinal === null ? "no encontrado" : `fila ${parejaFinal[0][0]}, asientos ${parejaFinal[0][1]} y ${parejaFinal[1][1]}`}.`);
+
+const salaAislados: number[][] = crearSalaOcupada();
+salaAislados[0][0] = ASIENTO_DISPONIBLE;
+salaAislados[0][2] = ASIENTO_DISPONIBLE;
+const resultadoAislados: [[number, number], [number, number]] | null = buscarAsientosContiguos(salaAislados);
+console.log(`Asientos aislados: ${resultadoAislados === null ? "sin pareja" : "se encontró una pareja"}.`);
+
+const salaSeparadaPorFilas: number[][] = crearSalaOcupada();
+salaSeparadaPorFilas[1][CANTIDAD_COLUMNAS - 1] = ASIENTO_DISPONIBLE;
+salaSeparadaPorFilas[2][0] = ASIENTO_DISPONIBLE;
+const resultadoEntreFilas: [[number, number], [number, number]] | null = buscarAsientosContiguos(salaSeparadaPorFilas);
+console.log(`Separación entre filas: ${resultadoEntreFilas === null ? "sin pareja" : "se encontró una pareja"}.`);
+
+let dimensionesCorrectas: boolean = salaVacia.length === CANTIDAD_FILAS;
+for (let indiceFila: number = 0; indiceFila < salaVacia.length; indiceFila++) {
+  if (salaVacia[indiceFila].length !== CANTIDAD_COLUMNAS) {
+    dimensionesCorrectas = false;
+  }
+}
+console.log(`Dimensiones verificadas (8 × 10): ${dimensionesCorrectas ? "sí" : "no"}.`);
